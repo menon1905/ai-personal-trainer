@@ -127,6 +127,49 @@ body {
   box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 15px;
+    order: 2;
+    /* Move stats to bottom */
+  }
+
+  .main-view {
+    height: 60vh;
+    /* Give camera 60% of vertical space */
+    width: 100%;
+    order: 1;
+    min-height: 300px;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .feedback-overlay {
+    top: 20px;
+    font-size: 1rem;
+    padding: 8px 16px;
+    width: 80%;
+    text-align: center;
+  }
+
+  body {
+    overflow: auto;
+    /* Allow scrolling on mobile if content overflows */
+  }
+}
+
 select option {
   background: #1a1b23;
   color: #fff;

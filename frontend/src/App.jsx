@@ -23,6 +23,7 @@ function App() {
   const stateMachineRef = useRef(new WorkoutStateMachine(EXERCISE_CONFIGS.SQUAT));
   const sessionIdRef = useRef(null);
   const [isBodyDetected, setIsBodyDetected] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(true);
   const lastDetectionRef = useRef(Date.now());
 
   // Voice Feedback
@@ -79,8 +80,15 @@ function App() {
     if (!canvasRef.current || !videoRef.current) return;
 
     const ctx = canvasRef.current.getContext('2d');
-    const width = canvasRef.current.width = videoRef.current.videoWidth;
-    const height = canvasRef.current.height = videoRef.current.videoHeight;
+    const width = videoRef.current.videoWidth || 640;
+    const height = videoRef.current.videoHeight || 480;
+
+    if (isCameraLoading && videoRef.current.videoWidth > 0) {
+      setIsCameraLoading(false);
+    }
+
+    canvasRef.current.width = width;
+    canvasRef.current.height = height;
 
     ctx.save();
     ctx.clearRect(0, 0, width, height);
@@ -219,9 +227,16 @@ function App() {
         <video
           ref={videoRef}
           className="camera-feed"
-          style={{ visibility: 'hidden', position: 'absolute' }}
+          style={{ visibility: 'hidden', position: 'absolute', width: '100%', height: '100%' }}
           playsInline
+          muted
         />
+        {isCameraLoading && (
+          <div style={{ position: 'absolute', color: '#fff', textAlign: 'center' }}>
+            <Activity className="animate-spin" size={32} />
+            <p>Iniciando câmera...</p>
+          </div>
+        )}
         <canvas ref={canvasRef} className="canvas-overlay" />
 
         {isWorkoutActive && !isBodyDetected && (
