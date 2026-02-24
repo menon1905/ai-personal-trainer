@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   background-color: var(--bg);
   color: var(--text);
   overflow: hidden;
@@ -35,6 +35,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 .main-view {
@@ -127,46 +128,153 @@ body {
   box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
 }
 
-/* Mobile Responsiveness */
+/* Mobile Responsiveness - Camera App Style */
 @media (max-width: 768px) {
   .app-container {
-    flex-direction: column;
-    padding: 10px;
-    gap: 10px;
-    overflow-y: auto;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    padding: 15px;
-    order: 2;
-    /* Move stats to bottom */
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    height: 100dvh;
+    /* Use dynamic viewport height for mobile browsers */
   }
 
   .main-view {
-    height: 60vh;
-    /* Give camera 60% of vertical space */
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    order: 1;
-    min-height: 300px;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    z-index: 1;
+  }
+
+  .sidebar {
+    position: absolute;
+    bottom: 15px;
+    /* Margin to show border at the bottom */
+    left: 15px;
+    /* Margin to show border at the sides */
+    right: 15px;
+    /* Margin to show border at the sides */
+    width: auto;
+    /* Allow margins to dictate width */
+    height: auto;
+    background: rgba(10, 11, 16, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    /* Slightly brighter border */
+    z-index: 10;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-sizing: border-box;
+  }
+
+  /* Handle remains for intuition */
+  .sidebar::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+
+  .sidebar h1,
+  .sidebar>div:first-child {
+    display: none;
+  }
+
+  nav {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 5px !important;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    text-align: center;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+  }
+
+  .stat-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 4px;
+    text-transform: uppercase;
   }
 
   .stat-value {
-    font-size: 1.5rem;
+    font-size: 1rem;
+    font-weight: 800;
+    margin-top: 0;
+  }
+
+  .sidebar nav .stat-card:last-child {
+    display: none;
+  }
+
+  .btn {
+    width: 100%;
+    height: 56px;
+    border-radius: 28px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    gap: 10px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
   }
 
   .feedback-overlay {
-    top: 20px;
-    font-size: 1rem;
-    padding: 8px 16px;
+    top: 10%;
     width: 80%;
+    max-width: 320px;
+    font-size: 0.95rem;
+    padding: 14px;
+    border-radius: 18px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
     text-align: center;
+    line-height: 1.4;
   }
 
-  body {
-    overflow: auto;
-    /* Allow scrolling on mobile if content overflows */
+  .feedback-red {
+    background: rgba(255, 50, 50, 0.95);
+    /* More opaque for contrast */
+    color: #fff;
+    /* White text for better legibility on red */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .feedback-green {
+    background: rgba(0, 255, 136, 0.95);
+    color: #000;
+    /* Dark text for better legibility on green */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  select {
+    font-size: 0.8rem !important;
+    width: 100% !important;
+    text-align: center;
+    text-align-last: center;
+    font-weight: 700;
   }
 }
 
