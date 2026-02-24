@@ -7,7 +7,8 @@ import { setupPose, startCamera } from './utils/camera';
 import { calculateAngle, EXERCISE_CONFIGS, WorkoutStateMachine } from './utils/engine';
 import { Activity, Play, Square, Settings, User, BarChart } from 'lucide-react';
 
-const socket = io('http://localhost:3001');
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const socket = io(BACKEND_URL);
 
 function App() {
   const videoRef = useRef(null);
@@ -83,6 +84,9 @@ function App() {
 
     ctx.save();
     ctx.clearRect(0, 0, width, height);
+
+    // Draw the camera frame
+    ctx.drawImage(results.image, 0, 0, width, height);
 
     if (results.poseLandmarks && results.poseLandmarks.length > 0) {
       setIsBodyDetected(true);
