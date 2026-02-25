@@ -29,10 +29,10 @@ export const EXERCISE_CONFIGS = {
             const ankleY = landmarks[28].y;
 
             const isStanding = shoulderY < hipY && hipY < kneeY;
-            const isVisible = landmarks[24].visibility > 0.6 && landmarks[28].visibility > 0.6;
+            const isVisible = landmarks[24].visibility > 0.4 && landmarks[28].visibility > 0.4;
 
-            // Relaxed edge check: Head cut is okay if shoulders and hips are visible
-            const isTooClose = ankleY > 0.98 || shoulderY < -0.05;
+            // Very relaxed edge check
+            const isTooClose = ankleY > 0.99 || shoulderY < -0.1;
 
             if (!isVisible) return 'Afastar: Pés não visíveis!';
             if (!isStanding) return 'Fique de pé para começar!';
@@ -99,9 +99,9 @@ export const EXERCISE_CONFIGS = {
         effortMsg: 'Suba o peso...',
         targetMsg: 'Excelente! Agora desça.',
         validate: (landmarks) => {
-            // Check visibility of ARM only, don't demand head/face
-            const isVisible = landmarks[12].visibility > 0.5 && landmarks[14].visibility > 0.5 && landmarks[16].visibility > 0.5;
-            const isStanding = landmarks[12].y < landmarks[24].y;
+            // Very forgiving visibility for arm detection
+            const isVisible = landmarks[12].visibility > 0.4 && landmarks[14].visibility > 0.4 && landmarks[16].visibility > 0.4;
+            const isStanding = landmarks[12].y < (landmarks[24].y + 0.1); // More tolerant height check
             return isVisible && isStanding;
         },
         requiresDisplacement: true,
@@ -133,10 +133,31 @@ export class WorkoutStateMachine {
     }
 
     update(currentAngle, landmarks) {
-        // Step 0: Visibility Check
+        this.isCorrecting = false; // Reset error state at start of frame
+
+        // Step 0: Visibility Check (Using a more forgiving threshold)
         const jointConfig = this.config.joints;
-        if (!landmarks[jointConfig.p1] || !landmarks[jointConfig.p2] || !landmarks[jointConfig.p3]) {
+        const p1 = landmarks[jointConfig.p1];
+        const p2 = landmarks[jointConfig.p2];
+        const p3 = landmarks[jointConfig.p3];
+
+        if (!p1 || !p2 || !p3) {
             this.feedback = 'Articulações não visíveis!';
+            this.isCorrecting = true;
+            return;
+        }
+
+        // Check for completely invisible points first
+        if (p1.visibility === 0 || p2.visibility === 0 || p3.visibility === 0) {
+            this.feedback = 'Articulações não visíveis!';
+            this.isCorrecting = true;
+            return;
+        }
+
+        // Then check for low visibility
+        if (p1.visibility < 0.2 || p2.visibility < 0.2 || p3.visibility < 0.2) {
+            this.feedback = 'Articulações não visíveis ou muito escuras!';
+            this.isCorrecting = true;
             return;
         }
 
