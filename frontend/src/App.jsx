@@ -40,6 +40,7 @@ function App() {
 
   const startWorkout = async () => {
     stateMachineRef.current = new WorkoutStateMachine(EXERCISE_CONFIGS[exercise]);
+    stateMachineRef.current.reset();
     setReps(0);
     setVideoBlob(null);
     setDiagnostics(null);
@@ -125,7 +126,7 @@ function App() {
       setIsBodyDetected(true);
       lastDetectionRef.current = Date.now();
 
-      const isError = isWorkoutActive && (stateMachineRef.current.isCorrecting || feedback.includes('curto') || feedback.includes('!'));
+      const isError = isWorkoutActive && (stateMachineRef.current.isCorrecting || feedback.toLowerCase().includes('inválid'));
       const color = isError ? '#ff4d4d' : '#00ff88';
       setStatusColor(color);
 

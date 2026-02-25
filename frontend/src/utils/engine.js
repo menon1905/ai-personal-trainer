@@ -107,7 +107,7 @@ export const EXERCISE_CONFIGS = {
         requiresDisplacement: true,
         displacementJoint: 16, // wrist
         minDisplacement: 0.16, // Double what it was (0.08)
-        invalidMsg: 'Braço fora da visão!',
+        invalidMsg: 'Mantenha o braço visível!',
         correctionThresholds: {
             elbowStatic: { joint: [12, 14, 24], minAngle: 160, msg: 'Cotovelo fixo!' }
         }
@@ -284,8 +284,10 @@ export class WorkoutStateMachine {
         this.reps = 0;
         this.state = 0;
         this.feedback = '';
+        this.isCorrecting = false; // Reset correcting state
         this.startJointPos = null;
         this.maxDisplacement = 0;
+        this.repHasError = false;
         this.diagnostics = { shortMovement: 0, badPosture: {}, totalAttempts: 0 };
     }
 }
