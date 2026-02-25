@@ -42,11 +42,11 @@ export const EXERCISE_CONFIGS = {
         },
         requiresDisplacement: true,
         displacementJoint: 24, // hip
-        minDisplacement: 0.12,  // Hip must move at least 12% of screen height
+        minDisplacement: 0.15, // Increased movement demand
         invalidMsg: 'Posicione o corpo inteiro na câmera!',
         correctionThresholds: {
-            backStraight: { joint: [12, 24, 26], minAngle: 60, msg: 'Mantenha as costas retas!' },
-            kneeForward: { joint: [24, 26, 28], minAngle: 70, msg: 'Não jogue o joelho muito à frente!' }
+            backStraight: { joint: [12, 24, 26], minAngle: 110, msg: 'Mantenha as costas retas!' },
+            kneeForward: { joint: [24, 26, 28], minAngle: 85, msg: 'Joelhos muito à frente!' }
         }
     },
     PUSHUP: {
@@ -106,10 +106,10 @@ export const EXERCISE_CONFIGS = {
         },
         requiresDisplacement: true,
         displacementJoint: 16, // wrist
-        minDisplacement: 0.08,
+        minDisplacement: 0.16, // Double what it was (0.08)
         invalidMsg: 'Braço fora da visão!',
         correctionThresholds: {
-            elbowStatic: { joint: [12, 14, 24], minAngle: 145, msg: 'Cotovelo fixo!' }
+            elbowStatic: { joint: [12, 14, 24], minAngle: 160, msg: 'Cotovelo fixo!' }
         }
     }
 };
@@ -148,21 +148,26 @@ export class WorkoutStateMachine {
             return;
         }
 
-        const { up, down } = this.config.thresholds;
-
-        // Anti-Cheat: Displacement Tracking
-        if (this.config.requiresDisplacement) {
-            const currentPos = landmarks[this.config.displacementJoint].y;
-            if (this.state === 0) {
-                this.startJointPos = currentPos;
-                this.maxDisplacement = 0;
-            } else {
-                const displacement = Math.abs(currentPos - this.startJointPos);
-                if (displacement > this.maxDisplacement) this.maxDisplacement = displacement;
-            }
+        // Step 4: Dynamic Correction Feedback (MUST BE BEFORE STATE COMPLETION)
+        this.isCorrecting = false;
+        if (this.config.correctionThresholds) {
+            Object.values(this.config.correctionThresholds).forEach(rule => {
+                const angle = calculateAngle(
+                    landmarks[rule.joint[0]],
+                    landmarks[rule.joint[1]],
+                    landmarks[rule.joint[2]]
+                );
+                if (angle < rule.minAngle) {
+                    this.feedback = rule.msg;
+                    this.isCorrecting = true;
+                    if (this.state !== 0) this.repHasError = true;
+                    this.diagnostics.badPosture[rule.msg] = (this.diagnostics.badPosture[rule.msg] || 0) + 1;
+                }
+            });
         }
 
-        // Rep counting logic
+        // Step 5: Rep counting logic (AFTER checking errors)
+        const { up, down } = this.config.thresholds;
         const isFlexionExercise = up > down;
 
         if (this.state === 0) {
@@ -214,22 +219,16 @@ export class WorkoutStateMachine {
             }
         }
 
-        // Dynamic Correction Feedback
-        this.isCorrecting = false;
-        if (this.config.correctionThresholds) {
-            Object.values(this.config.correctionThresholds).forEach(rule => {
-                const angle = calculateAngle(
-                    landmarks[rule.joint[0]],
-                    landmarks[rule.joint[1]],
-                    landmarks[rule.joint[2]]
-                );
-                if (angle < rule.minAngle) {
-                    this.feedback = rule.msg;
-                    this.isCorrecting = true;
-                    if (this.state !== 0) this.repHasError = true; // Invalidate rep if error occurs during movement
-                    this.diagnostics.badPosture[rule.msg] = (this.diagnostics.badPosture[rule.msg] || 0) + 1;
-                }
-            });
+        // Anti-Cheat: Displacement Tracking
+        if (this.config.requiresDisplacement) {
+            const currentPos = landmarks[this.config.displacementJoint].y;
+            if (this.state === 0) {
+                this.startJointPos = currentPos;
+                this.maxDisplacement = 0;
+            } else {
+                const displacement = Math.abs(currentPos - this.startJointPos);
+                if (displacement > this.maxDisplacement) this.maxDisplacement = displacement;
+            }
         }
 
         this.lastAngle = currentAngle;
