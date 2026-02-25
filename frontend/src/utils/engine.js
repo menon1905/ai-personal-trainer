@@ -21,23 +21,27 @@ export const EXERCISE_CONFIGS = {
         joints: { p1: 24, p2: 26, p3: 28 }, // hip, knee, ankle
         thresholds: { up: 165, down: 110 },
         validate: (landmarks) => {
-            // Anti-Sitting/Cheating Logic: 
-            // 1. Must be standing: Shoulder y < Hip y < Knee y
-            // 2. Minimum visibility for tracking
             const shoulderY = landmarks[12].y;
             const hipY = landmarks[24].y;
             const kneeY = landmarks[26].y;
             const ankleY = landmarks[28].y;
 
             const isStanding = shoulderY < hipY && hipY < kneeY;
-            const isFullBodyVisible = landmarks[24].visibility > 0.6 && landmarks[28].visibility > 0.6;
+            const isVisible = landmarks[24].visibility > 0.6 && landmarks[28].visibility > 0.6;
 
-            return isStanding && isFullBodyVisible;
+            // Check if too close to bottom edge (ankles)
+            const isTooClose = ankleY > 0.95 || shoulderY < 0.05;
+
+            if (!isVisible) return 'Afastar: Pés não visíveis!';
+            if (!isStanding) return 'Fique de pé para começar!';
+            if (isTooClose) return 'Centralize o corpo na tela!';
+
+            return true;
         },
         requiresDisplacement: true,
         displacementJoint: 24, // hip
         minDisplacement: 0.12,  // Hip must move at least 12% of screen height
-        invalidMsg: 'Posicione o corpo inteiro na câmera para começar!',
+        invalidMsg: 'Posicione o corpo inteiro na câmera!',
         correctionThresholds: {
             backStraight: { joint: [12, 24, 26], minAngle: 60, msg: 'Mantenha as costas retas!' },
             kneeForward: { joint: [24, 26, 28], minAngle: 70, msg: 'Não jogue o joelho muito à frente!' }
@@ -48,17 +52,21 @@ export const EXERCISE_CONFIGS = {
         joints: { p1: 12, p2: 14, p3: 16 }, // shoulder, elbow, wrist
         thresholds: { up: 160, down: 90 },
         validate: (landmarks) => {
-            // Must be horizontal: Shoulder Y and Hip Y should be similar
             const shoulderY = landmarks[12].y;
             const hipY = landmarks[24].y;
             const diff = Math.abs(shoulderY - hipY);
-            // In pushup position, shoulders and hips should be relatively close in Y
-            return diff < 0.20 && Math.abs(landmarks[12].x - landmarks[24].x) > 0.2;
+            const isHorizontal = diff < 0.25 && Math.abs(landmarks[12].x - landmarks[24].x) > 0.2;
+            const isVisible = landmarks[12].visibility > 0.6 && landmarks[14].visibility > 0.6;
+
+            if (!isVisible) return 'Braço não visível!';
+            if (!isHorizontal) return 'Fique na horizontal!';
+
+            return true;
         },
         requiresDisplacement: true,
         displacementJoint: 12, // shoulder
         minDisplacement: 0.08,
-        invalidMsg: 'Posicione-se horizontalmente para a flexão!',
+        invalidMsg: 'Posicione-se para a flexão!',
         correctionThresholds: {
             hipDropping: { joint: [12, 24, 26], minAngle: 155, msg: 'Não deixe o quadril cair!' }
         }
@@ -68,6 +76,9 @@ export const EXERCISE_CONFIGS = {
         joints: { p1: 24, p2: 26, p3: 28 },
         thresholds: { up: 165, down: 110 },
         validate: (landmarks) => landmarks[12].y < landmarks[24].y && landmarks[24].visibility > 0.5,
+        requiresDisplacement: true,
+        displacementJoint: 24,
+        minDisplacement: 0.1,
         invalidMsg: 'Fique de pé e apareça por inteiro!'
     },
     PLANK: {
@@ -80,9 +91,19 @@ export const EXERCISE_CONFIGS = {
     BICEP_CURL: {
         name: 'Rosca Direta',
         joints: { p1: 12, p2: 14, p3: 16 },
-        thresholds: { up: 150, down: 50 }, // Corrected: Up (starting/extended) -> Down (contracted)
-        validate: (landmarks) => landmarks[12].y < landmarks[24].y && landmarks[14].visibility > 0.7,
-        invalidMsg: 'Mantenha o braço bem visível!'
+        thresholds: { up: 150, down: 50 }, // Up (extended) -> Down (contracted)
+        validate: (landmarks) => {
+            const isVisible = landmarks[12].visibility > 0.7 && landmarks[14].visibility > 0.7 && landmarks[16].visibility > 0.7;
+            const isStanding = landmarks[12].y < landmarks[24].y;
+            return isVisible && isStanding;
+        },
+        requiresDisplacement: true,
+        displacementJoint: 16, // wrist
+        minDisplacement: 0.15, // Wrist must move at least 15% of screen height
+        invalidMsg: 'Posicione o braço inteiro de forma visível!',
+        correctionThresholds: {
+            elbowStatic: { joint: [12, 14, 24], minAngle: 15, msg: 'Mantenha o cotovelo parado junto ao corpo!' }
+        }
     }
 };
 
@@ -112,8 +133,9 @@ export class WorkoutStateMachine {
         }
 
         // Step 1: Validate Position
-        if (this.config.validate && !this.config.validate(landmarks)) {
-            this.feedback = this.config.invalidMsg || 'Posição inválida!';
+        const validationResult = this.config.validate ? this.config.validate(landmarks) : true;
+        if (validationResult !== true) {
+            this.feedback = typeof validationResult === 'string' ? validationResult : (this.config.invalidMsg || 'Posição inválida!');
             this.isCorrecting = true;
             return;
         }
