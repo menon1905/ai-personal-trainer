@@ -20,6 +20,8 @@ export const EXERCISE_CONFIGS = {
         name: 'Agachamento',
         joints: { p1: 24, p2: 26, p3: 28 }, // hip, knee, ankle
         thresholds: { up: 165, down: 110 },
+        effortMsg: 'Desça mais...',
+        targetMsg: 'Excelente! Agora suba.',
         validate: (landmarks) => {
             const shoulderY = landmarks[12].y;
             const hipY = landmarks[24].y;
@@ -29,8 +31,8 @@ export const EXERCISE_CONFIGS = {
             const isStanding = shoulderY < hipY && hipY < kneeY;
             const isVisible = landmarks[24].visibility > 0.6 && landmarks[28].visibility > 0.6;
 
-            // Check if too close to bottom edge (ankles)
-            const isTooClose = ankleY > 0.95 || shoulderY < 0.05;
+            // Relaxed edge check: Head cut is okay if shoulders and hips are visible
+            const isTooClose = ankleY > 0.98 || shoulderY < -0.05;
 
             if (!isVisible) return 'Afastar: Pés não visíveis!';
             if (!isStanding) return 'Fique de pé para começar!';
@@ -51,6 +53,8 @@ export const EXERCISE_CONFIGS = {
         name: 'Flexão de Braço',
         joints: { p1: 12, p2: 14, p3: 16 }, // shoulder, elbow, wrist
         thresholds: { up: 160, down: 90 },
+        effortMsg: 'Desça o peito...',
+        targetMsg: 'Boa! Estenda o braço.',
         validate: (landmarks) => {
             const shoulderY = landmarks[12].y;
             const hipY = landmarks[24].y;
@@ -91,18 +95,21 @@ export const EXERCISE_CONFIGS = {
     BICEP_CURL: {
         name: 'Rosca Direta',
         joints: { p1: 12, p2: 14, p3: 16 },
-        thresholds: { up: 150, down: 75 }, // Relaxed down threshold for better detection
+        thresholds: { up: 155, down: 70 },
+        effortMsg: 'Suba o peso...',
+        targetMsg: 'Excelente! Agora desça.',
         validate: (landmarks) => {
-            const isVisible = landmarks[12].visibility > 0.7 && landmarks[14].visibility > 0.7 && landmarks[16].visibility > 0.7;
+            // Check visibility of ARM only, don't demand head/face
+            const isVisible = landmarks[12].visibility > 0.5 && landmarks[14].visibility > 0.5 && landmarks[16].visibility > 0.5;
             const isStanding = landmarks[12].y < landmarks[24].y;
             return isVisible && isStanding;
         },
         requiresDisplacement: true,
         displacementJoint: 16, // wrist
-        minDisplacement: 0.08, // Relaxed displacement requirement
-        invalidMsg: 'Posicione o braço inteiro de forma visível!',
+        minDisplacement: 0.08,
+        invalidMsg: 'Braço fora da visão!',
         correctionThresholds: {
-            elbowStatic: { joint: [12, 14, 24], minAngle: 140, msg: 'Mantenha o cotovelo parado!' }
+            elbowStatic: { joint: [12, 14, 24], minAngle: 145, msg: 'Cotovelo fixo!' }
         }
     }
 };
@@ -175,9 +182,9 @@ export class WorkoutStateMachine {
             const hasReachedTarget = isFlexionExercise ? currentAngle <= down : currentAngle >= down;
             if (hasReachedTarget) {
                 this.state = 2;
-                this.feedback = 'Excelente! Agora volte.';
+                this.feedback = this.config.targetMsg || 'Excelente! Agora volte.';
             } else {
-                this.feedback = 'Continue descendo...';
+                this.feedback = this.config.effortMsg || 'Continue o movimento...';
             }
         } else if (this.state === 2) {
             const isReturning = isFlexionExercise ? currentAngle > down + 20 : currentAngle < down - 20;
