@@ -99,10 +99,10 @@ export const EXERCISE_CONFIGS = {
         },
         requiresDisplacement: true,
         displacementJoint: 16, // wrist
-        minDisplacement: 0.15, // Wrist must move at least 15% of screen height
+        minDisplacement: 0.20, // Increased: Wrist must move at least 20% of screen height
         invalidMsg: 'Posicione o braço inteiro de forma visível!',
         correctionThresholds: {
-            elbowStatic: { joint: [12, 14, 24], minAngle: 15, msg: 'Mantenha o cotovelo parado junto ao corpo!' }
+            elbowStatic: { joint: [12, 14, 24], minAngle: 165, msg: 'Mantenha o cotovelo parado junto ao corpo!' }
         }
     }
 };
@@ -117,6 +117,7 @@ export class WorkoutStateMachine {
         this.startJointPos = null;
         this.maxDisplacement = 0;
         this.isCorrecting = false;
+        this.repHasError = false; // Track if current rep has a posture error
         this.diagnostics = {
             shortMovement: 0,
             badPosture: {},
@@ -165,6 +166,7 @@ export class WorkoutStateMachine {
                 this.maxDisplacement = 0;
             } else {
                 this.state = 1;
+                this.repHasError = false; // Reset error flag for new attempt
                 this.diagnostics.totalAttempts++;
             }
         }
@@ -192,6 +194,11 @@ export class WorkoutStateMachine {
                     cheated = true;
                 }
 
+                if (this.repHasError) {
+                    this.feedback = 'Repetição inválida: Corrija a postura!';
+                    cheated = true;
+                }
+
                 if (!cheated) {
                     this.reps++;
                     this.feedback = 'Boa repetição!';
@@ -212,6 +219,7 @@ export class WorkoutStateMachine {
                 if (angle < rule.minAngle) {
                     this.feedback = rule.msg;
                     this.isCorrecting = true;
+                    if (this.state !== 0) this.repHasError = true; // Invalidate rep if error occurs during movement
                     this.diagnostics.badPosture[rule.msg] = (this.diagnostics.badPosture[rule.msg] || 0) + 1;
                 }
             });
