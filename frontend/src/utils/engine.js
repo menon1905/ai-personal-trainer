@@ -91,7 +91,7 @@ export const EXERCISE_CONFIGS = {
     BICEP_CURL: {
         name: 'Rosca Direta',
         joints: { p1: 12, p2: 14, p3: 16 },
-        thresholds: { up: 150, down: 50 }, // Up (extended) -> Down (contracted)
+        thresholds: { up: 150, down: 75 }, // Relaxed down threshold for better detection
         validate: (landmarks) => {
             const isVisible = landmarks[12].visibility > 0.7 && landmarks[14].visibility > 0.7 && landmarks[16].visibility > 0.7;
             const isStanding = landmarks[12].y < landmarks[24].y;
@@ -99,10 +99,10 @@ export const EXERCISE_CONFIGS = {
         },
         requiresDisplacement: true,
         displacementJoint: 16, // wrist
-        minDisplacement: 0.20, // Increased: Wrist must move at least 20% of screen height
+        minDisplacement: 0.08, // Relaxed displacement requirement
         invalidMsg: 'Posicione o braço inteiro de forma visível!',
         correctionThresholds: {
-            elbowStatic: { joint: [12, 14, 24], minAngle: 165, msg: 'Mantenha o cotovelo parado junto ao corpo!' }
+            elbowStatic: { joint: [12, 14, 24], minAngle: 140, msg: 'Mantenha o cotovelo parado!' }
         }
     }
 };

@@ -44,6 +44,7 @@ function App() {
     setVideoBlob(null);
     setDiagnostics(null);
     setIsWorkoutActive(true);
+    setFeedback('Iniciando...');
     speak(`Iniciando análise de ${EXERCISE_CONFIGS[exercise].name}. Concentre-se na execução!`, true);
     startRecording();
   };
@@ -78,6 +79,7 @@ function App() {
     }
     const report = stateMachineRef.current.getSummary();
     setDiagnostics(report);
+    setFeedback('Treino finalizado');
     speak('Treino finalizado. Confira seu diagnóstico.');
   };
 
@@ -123,7 +125,7 @@ function App() {
       setIsBodyDetected(true);
       lastDetectionRef.current = Date.now();
 
-      const isError = stateMachineRef.current.isCorrecting || feedback.includes('curto') || feedback.includes('!');
+      const isError = isWorkoutActive && (stateMachineRef.current.isCorrecting || feedback.includes('curto') || feedback.includes('!'));
       const color = isError ? '#ff4d4d' : '#00ff88';
       setStatusColor(color);
 
